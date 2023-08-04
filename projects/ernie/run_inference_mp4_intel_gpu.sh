@@ -1,6 +1,6 @@
 #! /bin/bash
 
-# Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
+# Copyright (c) 2023 PaddlePaddle Authors. All Rights Reserved.
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,20 +22,23 @@ source $(python -c 'import site, os; print(os.path.join(site.getsitepackages()[0
 
 export PADDLE_XCCL_BACKEND="intel_gpu"
 export PADDLE_DISTRI_BACKEND="xccl"
-export FLAGS_selected_intel_gpus="0"
+export FLAGS_selected_intel_gpus="0,1,2,3"
 
-log_dir="log_export_ernie_345M_mp1"
+# ENV for ATS-M, double type
+export OverrideDefaultFP64Settings=1
+export IGC_EnableDPEmulation=1
+export CCL_ZE_IPC_EXCHANGE=sockets
+
+log_dir="log_export_ernie_345M_mp4"
 rm -rf ${log_dir}
 
-output_dir="output_ernie_345M_mp1"
+output_dir="output_ernie_345M_mp4"
 rm -rf ${output_dir}
 
-# 345M mp1 export
-python -m paddle.distributed.launch --log_dir ${log_dir} --devices "0" \
+# 345M mp4 export
+python -m paddle.distributed.launch --log_dir ${log_dir} --devices "0,1,2,3" \
     ./tools/auto_export.py \
     -c ./ppfleetx/configs/nlp/ernie/auto/finetune_ernie_345M_single_card.yaml \
-    -o Distributed.mp_degree=1 \
+    -o Distributed.mp_degree=4 \
     -o Global.device=intel_gpu \
     -o Engine.save_load.output_dir=${output_dir}
-
-# python -m paddle.distributed.launch --log_dir "log_export_ernie_345M_mp1" --devices "0" ./tools/auto_export.py -c ./ppfleetx/configs/nlp/ernie/auto/finetune_ernie_345M_single_card.yaml -o Distributed.mp_degree=1 -o Global.device=intel_gpu -o Engine.save_load.output_dir=output_ernie_345M_mp1
