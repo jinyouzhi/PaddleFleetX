@@ -18,6 +18,102 @@ from collections.abc import Sequence, Mapping
 
 import paddle
 import paddle.distributed.fleet as fleet
+import paddle.nn as nn
+from paddle.nn import Linear, Dropout, LayerNorm, LayerList, Layer
+from paddle.static import InputSpec
+from paddle.nn import functional as F
+
+for lib in os.listdir(os.getenv("CUSTOM_DEVICE_ROOT")):
+    if lib.endswith(".so"):
+        paddle.utils.cpp_extension.extension_utils.load_op_meta_info_and_register_op(
+            lib
+        )
+
+class SDP(Layer):
+    def __init__(self,
+                 embed_dim,
+                 num_heads,
+                 attn_dropout=-1):
+        super(SDP, self).__init__()    
+        self.embed_dim = embed_dim
+        self.num_heads = num_heads
+        self.head_dim = embed_dim // num_heads
+        self.attn_dropout = attn_dropout
+        
+    def forward(self, q, k, v, attn_mask=None):
+        # compute scale dot prod
+        product = paddle.matmul(x=q, y=k, transpose_y=True)
+        print('matmul q=', q.size(), ', k=', k.size())
+        product = paddle.scale(product, scale=self.head_dim**-1.5)
+        if attn_mask is not None:
+            print('qk mask')
+            product = product + attn_mask
+
+        weights = F.softmax(product)
+        print('qk softmax')
+        # out = weights
+        # if enable dropout can't work
+        if self.attn_dropout:
+            print('qk dropout')
+            weights = paddle.scale(weights, 0.9)
+            # weights = F.dropout(weights, 0.1, training=False, mode="downscale_in_infer")
+
+        out = paddle.matmul(weights, v)
+        print('matmul (qk)=', weights.size(), ', v=', v.size())
+        return out       
+        
+        
+ 
+ 
+@paddle.incubate.passes.ir.RegisterPass
+def generate_delete_dropout():
+    def pattern(x):
+        dropout_op = paddle.incubate.passes.ir.PassDesc.OP.dropout
+        dropout_op._inputs.pop("Seed")
+        dropout_op._outputs.pop("Mask")
+        return dropout_op(X=x)
+
+    def replace(x):
+        return paddle.scale(x)
+
+    return pattern, replace
+
+# @paddle.incubate.passes.ir.RegisterPass(input_specs={'x': InputSpec([-1, 384, 768]), 'attn_mask': InputSpec([-1, 12, 384, 384])})
+@paddle.incubate.passes.ir.RegisterPass(input_specs={"q": InputSpec([8, 16, 384, 64]),
+                                                     "k": InputSpec([8, 16, 384, 64]),
+                                                     "v": InputSpec([8, 16, 384, 64]),
+                                                     "attn_mask": InputSpec([8, 16, 384, 384])})
+def generate_fused_multihead_attention():
+    def pattern(q, k, v, attn_mask):
+        add_residual = True
+        pre_ln = True
+        attn_dropout = 0.1
+        # add_mask = True
+        add_mask = False
+        batch_size = 8
+        seq_len = 384
+        hidden_size = 1024
+        num_heads = 16
+        sdp = SDP(
+            hidden_size,
+            num_heads,
+            # add_residual=add_residual,
+            # pre_ln=pre_ln,
+            attn_dropout=attn_dropout,
+        )
+        return sdp(q, k, v, attn_mask)
+
+    def replace(q, k, v, attn_mask):
+        fuse_op = paddle.incubate.passes.ir.PassDesc.OP.multihead_attention(
+            #X=x,
+            Q=q,
+            K=k,
+            V=v,
+            Attn_mask=attn_mask
+        )
+        return fuse_op
+
+    return pattern, replace
 
 # TensorRT precisions
 TRT_PRECISIONS = {
@@ -32,10 +128,12 @@ class _StaticGuard(object):
         pass
 
     def __enter__(self):
-        paddle.enable_static()
+        pass 
+        # paddle.enable_static()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        paddle.disable_static()
+        pass
+        # paddle.disable_static()
 
 
 class TensorRTConfig(object):
@@ -115,12 +213,15 @@ class InferenceEngine(object):
                  model_dir,
                  mp_degree=1,
                  tensorrt_config=None,
-                 device=None):
+                 device=None,
+                 custom_passes=None):
         self.model_dir = model_dir
         self.mp_degree = mp_degree
         self.tensorrt_config = tensorrt_config
         self.auto = False
         self.device = device
+        self.custom_passes = custom_passes
+       
 
         for fname in os.listdir(model_dir):
             if "auto" in fname:
@@ -240,8 +341,16 @@ class InferenceEngine(object):
             else:
                 config.enable_tuned_tensorrt_dynamic_shape(
                     self.tensorrt_config.shape_range_info_filename, True)
+        
+        # Append custom pases into pass_builder
+        if self.custom_passes and isinstance(self.custom_passes, list):
+            pass_builder = config.pass_builder()
+            for custom_pass in self.custom_passes:
+                pass_builder.append_pass(custom_pass)
+            print(pass_builder.all_passes())
 
         self.predictor = paddle.inference.create_predictor(config)
+        # print(self.predictor.get_serialized_program())
 
     def input_names(self):
         return self.predictor.get_input_names()
