@@ -436,13 +436,13 @@ class MultiHeadAttention(Layer):
         print("SDP input q shape: ", q.shape)
         print("SDP input k shape: ", k.shape)
         # convert type to fp16
-        q = paddle.cast(q, dtype="float16")
-        k = paddle.cast(k, dtype="float16")
-        v = paddle.cast(v, dtype="float16")
-        attn_mask = paddle.cast(attn_mask, dtype="float16")
+        # q = paddle.cast(q, dtype="float16")
+        # k = paddle.cast(k, dtype="float16")
+        # v = paddle.cast(v, dtype="float16")
+        # attn_mask = paddle.cast(attn_mask, dtype="float16")
         out = SDP(self.embed_dim, self.num_heads, self.dropout)(q, k, v, attn_mask)
         # convert back to fp32
-        out = paddle.cast(out, dtype="float32")
+        # out = paddle.cast(out, dtype="float32")
         # combine heads
         out = tensor.transpose(out, perm=[0, 2, 1, 3])
         out = tensor.reshape(x=out, shape=[0, 0, out.shape[2] * out.shape[3]])

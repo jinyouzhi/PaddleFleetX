@@ -49,7 +49,7 @@ def parse_args():
 
 def main(args):
     fleet.init(is_collective=True)
-    input("run 'gdb attach {}' to debug".format(os.getpid()))
+    # input("run 'gdb attach {}' to debug".format(os.getpid()))
     ###########################################################################################################
     # TensorRT inference Engine Config
     # https://github.com/PaddlePaddle/PaddleFleetX/blob/develop/ppfleetx/core/engine/inference_engine.py#L43

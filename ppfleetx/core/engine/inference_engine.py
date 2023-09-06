@@ -23,6 +23,8 @@ from paddle.nn import Linear, Dropout, LayerNorm, LayerList, Layer
 from paddle.static import InputSpec
 from paddle.nn import functional as F
 
+import paddle.incubate.passes.ir as IR
+
 for lib in os.listdir(os.getenv("CUSTOM_DEVICE_ROOT")):
     if lib.endswith(".so"):
         paddle.utils.cpp_extension.extension_utils.load_op_meta_info_and_register_op(
@@ -78,38 +80,67 @@ def generate_delete_dropout():
 
     return pattern, replace
 
-# @paddle.incubate.passes.ir.RegisterPass(input_specs={'x': InputSpec([-1, 384, 768]), 'attn_mask': InputSpec([-1, 12, 384, 384])})
-@paddle.incubate.passes.ir.RegisterPass(input_specs={"q": InputSpec([8, 16, 384, 64]),
-                                                     "k": InputSpec([8, 16, 384, 64]),
-                                                     "v": InputSpec([8, 16, 384, 64]),
-                                                     "attn_mask": InputSpec([8, 16, 384, 384])})
+# # @paddle.incubate.passes.ir.RegisterPass(input_specs={'x': InputSpec([-1, 384, 768]), 'attn_mask': InputSpec([-1, 12, 384, 384])})
+# @paddle.incubate.passes.ir.RegisterPass(input_specs={"q": InputSpec([8, 16, 384, 64]),
+#                                                      "k": InputSpec([8, 16, 384, 64]),
+#                                                      "v": InputSpec([8, 16, 384, 64]),
+#                                                      "attn_mask": InputSpec([8, 16, 384, 384])})
+# def generate_fused_multihead_attention():
+#     def pattern(q, k, v, attn_mask):
+#         add_residual = True
+#         pre_ln = True
+#         attn_dropout = 0.1
+#         # add_mask = True
+#         add_mask = False
+#         batch_size = 8
+#         seq_len = 384
+#         hidden_size = 1024
+#         num_heads = 16
+#         sdp = SDP(
+#             hidden_size,
+#             num_heads,
+#             # add_residual=add_residual,
+#             # pre_ln=pre_ln,
+#             attn_dropout=attn_dropout,
+#         )
+#         return sdp(q, k, v, attn_mask)
+
+#     def replace(q, k, v, attn_mask):
+#         fuse_op = paddle.incubate.passes.ir.PassDesc.OP.multihead_attention(
+#             #X=x,
+#             Q=q,
+#             K=k,
+#             V=v,
+#             Attn_mask=attn_mask
+#         )
+#         return fuse_op
+
+#     return pattern, replace
+
+@paddle.incubate.passes.ir.RegisterPass
 def generate_fused_multihead_attention():
     def pattern(q, k, v, attn_mask):
-        add_residual = True
-        pre_ln = True
-        attn_dropout = 0.1
-        # add_mask = True
-        add_mask = False
-        batch_size = 8
-        seq_len = 384
-        hidden_size = 1024
-        num_heads = 16
-        sdp = SDP(
-            hidden_size,
-            num_heads,
-            # add_residual=add_residual,
-            # pre_ln=pre_ln,
-            attn_dropout=attn_dropout,
-        )
-        return sdp(q, k, v, attn_mask)
+        attn_dropout = True
+        """
+        You can check ops name in Netron(Graph View Tool)
+        make sure all op's name in following code keep same to graph view
+        """
+        product = IR.PassDesc.OP.matmul_v2(X=q, Y=k)
+        product = IR.PassDesc.OP.scale(X=product)
+        #if attn_mask is not None:
+        product = IR.PassDesc.OP.elementwise_add(X=product, Y=attn_mask)
+        weights = IR.PassDesc.OP.softmax(X=product)
+        if attn_dropout:
+            # weights = IR.PassDesc.OP.dropout(X=weights)
+            weights = IR.PassDesc.OP.scale(X=weights)
+            # weights._inputs.pop("Seed")
+            # weights._outputs.pop("Mask")
+        out = IR.PassDesc.OP.matmul_v2(X=weights, Y=v)
+        return out
 
     def replace(q, k, v, attn_mask):
         fuse_op = paddle.incubate.passes.ir.PassDesc.OP.multihead_attention(
-            #X=x,
-            Q=q,
-            K=k,
-            V=v,
-            Attn_mask=attn_mask
+            Q=q, K=k, V=v, Attn_mask=attn_mask
         )
         return fuse_op
 
