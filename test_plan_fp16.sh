@@ -1,5 +1,20 @@
+# Copyright (c) 2023 PaddlePaddle Authors. All Rights Reserved.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#     http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 # 1N1C
-sh projects/ernie/auto_export_ernie_345M_mp1fp16_intel_gpu.sh
+# sh projects/ernie/auto_export_ernie_345M_mp1fp16_intel_gpu.sh
+sh projects/ernie/auto_export_ernie_345M_mp1_intel_gpu.sh
 BS=1 sh projects/ernie/run_inference_intel_gpu.sh |& tee ./fp16/inf345m_1n1c_bs1.log
 BS=2 sh projects/ernie/run_inference_intel_gpu.sh |& tee ./fp16/inf345m_1n1c_bs2.log
 BS=4 sh projects/ernie/run_inference_intel_gpu.sh |& tee ./fp16/inf345m_1n1c_bs4.log
@@ -11,7 +26,8 @@ BS=128 sh projects/ernie/run_inference_intel_gpu.sh |& tee ./fp16/inf345m_1n1c_b
 BS=256 sh projects/ernie/run_inference_intel_gpu.sh |& tee ./fp16/inf345m_1n1c_bs256.log
 BS=512 sh projects/ernie/run_inference_intel_gpu.sh |& tee ./fp16/inf345m_1n1c_bs512.log
 # 1N2C DP=2
-sh projects/ernie/auto_export_ernie_345M_dp2fp16_intel_gpu.sh
+# sh projects/ernie/auto_export_ernie_345M_dp2fp16_intel_gpu.sh
+sh projects/ernie/auto_export_ernie_345M_dp2_intel_gpu.sh
 BS=1 sh projects/ernie/run_inference_dp2_intel_gpu.sh |& tee ./fp16/inf345m_1n2c_dp2_bs1.log
 BS=2 sh projects/ernie/run_inference_dp2_intel_gpu.sh |& tee ./fp16/inf345m_1n2c_dp2_bs2.log
 BS=4 sh projects/ernie/run_inference_dp2_intel_gpu.sh |& tee ./fp16/inf345m_1n2c_dp2_bs4.log
@@ -23,7 +39,8 @@ BS=128 sh projects/ernie/run_inference_dp2_intel_gpu.sh |& tee ./fp16/inf345m_1n
 BS=256 sh projects/ernie/run_inference_dp2_intel_gpu.sh |& tee ./fp16/inf345m_1n2c_dp2_bs256.log
 BS=512 sh projects/ernie/run_inference_dp2_intel_gpu.sh |& tee ./fp16/inf345m_1n2c_dp2_bs512.log
 # 1N2C MP=2
-sh projects/ernie/auto_export_ernie_345M_mp2fp16_intel_gpu.sh
+# sh projects/ernie/auto_export_ernie_345M_mp2fp16_intel_gpu.sh
+sh projects/ernie/auto_export_ernie_345M_mp2_intel_gpu.sh
 BS=1 sh projects/ernie/run_inference_mp2_intel_gpu.sh |& tee ./fp16/inf345m_1n2c_bs1.log
 BS=2 sh projects/ernie/run_inference_mp2_intel_gpu.sh |& tee ./fp16/inf345m_1n2c_bs2.log
 BS=4 sh projects/ernie/run_inference_mp2_intel_gpu.sh |& tee ./fp16/inf345m_1n2c_bs4.log
@@ -36,6 +53,7 @@ BS=256 sh projects/ernie/run_inference_mp2_intel_gpu.sh |& tee ./fp16/inf345m_1n
 BS=512 sh projects/ernie/run_inference_mp2_intel_gpu.sh |& tee ./fp16/inf345m_1n2c_bs512.log
 # # 1N4C
 # sh projects/ernie/auto_export_ernie_345M_mp4fp16_intel_gpu.sh
+# sh projects/ernie/auto_export_ernie_345M_mp4_intel_gpu.sh
 # BS=1 sh projects/ernie/run_inference_mp4_intel_gpu.sh |& tee ./fp16/inf345m_1n4c_bs1.log
 # BS=2 sh projects/ernie/run_inference_mp4_intel_gpu.sh |& tee ./fp16/inf345m_1n4c_bs2.log
 # BS=4 sh projects/ernie/run_inference_mp4_intel_gpu.sh |& tee ./fp16/inf345m_1n4c_bs4.log

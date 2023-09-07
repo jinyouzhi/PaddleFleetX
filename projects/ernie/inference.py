@@ -1,4 +1,3 @@
-
 # copyright (c) 2022 PaddlePaddle Authors. All Rights Reserve.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,6 +27,7 @@ sys.path.append(os.path.abspath(os.path.join(__dir__, '../../')))
 from ppfleetx.core.engine import InferenceEngine, TensorRTConfig
 from ppfleetx.data.tokenizers import GPTTokenizer
 
+
 def parse_args():
     parser = argparse.ArgumentParser("ernie inference")
     parser.add_argument(
@@ -37,14 +37,30 @@ def parse_args():
     parser.add_argument(
         '-d', '--device', type=str, default='', help='device type')
     parser.add_argument(
-            '--trt', default=False, action='store_true', help='enable trt inference')
-    parser.add_argument('-b', '--batch_size', default=int(os.environ.get("BS", 8)), type=int, help="batch size")
-    parser.add_argument('--dummy', default=True, action='store_true', help='use dummy data for benchmark')
-    parser.add_argument('--seed', default=1233457890, type=int, help='random seed for dummy data')
-    parser.add_argument('--seqlen', default=384, type=int, help='seqlen for dummy data')
+        '--trt',
+        default=False,
+        action='store_true',
+        help='enable trt inference')
+    parser.add_argument(
+        '-b',
+        '--batch_size',
+        default=int(os.environ.get("BS", 8)),
+        type=int,
+        help="batch size")
+    parser.add_argument(
+        '--dummy',
+        default=True,
+        action='store_true',
+        help='use dummy data for benchmark')
+    parser.add_argument(
+        '--seed',
+        default=1233457890,
+        type=int,
+        help='random seed for dummy data')
+    parser.add_argument(
+        '--seqlen', default=384, type=int, help='seqlen for dummy data')
     args = parser.parse_args()
     return args
-
 
 
 def main(args):
@@ -55,7 +71,7 @@ def main(args):
     # https://github.com/PaddlePaddle/PaddleFleetX/blob/develop/ppfleetx/core/engine/inference_engine.py#L43
     ###########################################################################################################
     if args.trt:
-        trtc=TensorRTConfig(
+        trtc = TensorRTConfig(
             max_batch_size=32,
             workspace_size=1 << 30,
             min_subgraph_size=3,
@@ -63,14 +79,20 @@ def main(args):
             use_static=False,
             use_calib_mode=False,
             collect_shape=True,
-            shape_range_info_filename=tempfile.NamedTemporaryFile().name
-            )
+            shape_range_info_filename=tempfile.NamedTemporaryFile().name)
     else:
-        trtc=None
+        trtc = None
     infer_engine = InferenceEngine(
-        args.model_dir, args.mp_degree, device=args.device, tensorrt_config=trtc,
-        custom_passes=["generate_delete_dropout",
-         "generate_fused_multihead_attention"])
+        args.model_dir,
+        args.mp_degree,
+        device=args.device,
+        tensorrt_config=trtc,
+        custom_passes=[
+            "generate_delete_dropout",
+            "generate_fused_multihead_attention",
+            # "auto_mixed_precision_pass",
+        ],
+        precision='fp16')
     tokenizer = GPTTokenizer.from_pretrained("gpt2")
     text = 'Hi ERNIE. Tell me who Jack Ma is.'
     inputs = tokenizer(text, padding=True, return_attention_mask=True)
@@ -80,22 +102,34 @@ def main(args):
     ###########################################################################################################
     if args.dummy:
         np.random.seed(args.seed)
-        inputs['input_ids'] =  np.random.randint(40000, size=(args.batch_size, args.seqlen),dtype="int64")
-        inputs['token_type_ids'] = np.random.randint(4,size=(args.batch_size,args.seqlen),dtype="int64")
-        whole_data=[inputs['token_type_ids'],inputs['input_ids']]
+        inputs['input_ids'] = np.random.randint(
+            40000, size=(args.batch_size, args.seqlen), dtype="int64")
+        inputs['token_type_ids'] = np.random.randint(
+            4, size=(args.batch_size, args.seqlen), dtype="int64")
+        whole_data = [inputs['token_type_ids'], inputs['input_ids']]
     else:
-        whole_data=[np.array(inputs['token_type_ids']).reshape(1, -1),np.array(inputs['input_ids']).reshape(1,-1)]
+        whole_data = [
+            np.array(inputs['token_type_ids']).reshape(1, -1),
+            np.array(inputs['input_ids']).reshape(1, -1)
+        ]
 
-    print("=============================================================================================")
+    print(
+        "============================================================================================="
+    )
     print("DEBUG")
-    print("=============================================================================================")
-    print(f"dummy: {args.dummy}, seed: {args.seed}, seqlen: {args.seqlen}, batch_size: {args.batch_size}")
+    print(
+        "============================================================================================="
+    )
+    print(
+        f"dummy: {args.dummy}, seed: {args.seed}, seqlen: {args.seqlen}, batch_size: {args.batch_size}"
+    )
     print(whole_data)
-    prof=profiler.Profiler(targets=[
-                           profiler.ProfilerTarget.CPU,
-                           profiler.ProfilerTarget.GPU,
-                           profiler.ProfilerTarget.CUSTOM_DEVICE],
-                           scheduler=(3, 10))
+    prof = profiler.Profiler(
+        targets=[
+            profiler.ProfilerTarget.CPU, profiler.ProfilerTarget.GPU,
+            profiler.ProfilerTarget.CUSTOM_DEVICE
+        ],
+        scheduler=(3, 10))
 
     # cum_cost = 0
     # avg_cost = -1
@@ -107,30 +141,16 @@ def main(args):
             paddle.device.synchronize()
             end = time.time()
             cost = f"{(end - start)*1000:.7f}"
-            throughput=args.batch_size / (end - start)
+            throughput = args.batch_size / (end - start)
             print(
-                f"[inference][{i+1}/10]: start: {start:.7f} end:{end:.7f} cost:{cost:>13} ms, throughput: {throughput:.5f} sentence/s")
+                f"[inference][{i+1}/10]: bs: {args.batch_size} start: {start:.7f} end:{end:.7f} cost:{cost:>13} ms, throughput: {throughput:.5f} sentence/s"
+            )
             #if i >=3:
             #    cum_cost += (end-start) * 1000
             #    avg_cost = f"{cum_cost/(i-2):.7f}"
             #throughput = batch_size / (end - start)
             #print(f"[inference][{i+1}]: start: {start:.7f} end:{end:.7f} cost:{cost:>13} ms, avg_cost:{avg_cost:>13} ms, throughput: {throughput:.5f} sentence/s")
             prof.step()
-            # if i == 0:
-            #     from ppfleetx.core.models.language_model.ernie.auto.custom_passes import generate_delete_dropout, generate_fused_multihead_attention
-            #     graph = core.Graph(main_prog.desc)
-            #     before_node_nums = len(graph.nodes())
-            #     print("before_node_nums", before_node_nums)
-            #     core.get_pass("generate_delete_dropout").apply(graph)
-            #     core.get_pass("generate_fused_multihead_attention").apply(graph)
-            #     after_node_nums = len(graph.nodes())
-            #     print("after_node_nums", after_node_nums)
-            #     after_prog = paddle.fluid.framework.IrGraph(graph).to_program()
-
-            #     ops = main_prog.global_block().ops
-            #     print("main_prog ops:", ops)
-            #     after_ops = after_prog.global_block().ops
-            #     print("after_prog ops:", after_ops)
 
     prof.summary(time_unit='ms')
     if os.getenv('PADDLE_LOCAL_RANK', '0') == '0':
@@ -139,12 +159,9 @@ def main(args):
         elif paddle.device.is_compiled_with_cuda():
             subprocess.call('nvidia-smi')
 
-
     print(outs)
 
 
 if __name__ == "__main__":
     args = parse_args()
     main(args)
-
-

@@ -35,6 +35,7 @@ __all__ = []
 # from .custom_passes import SDP
 from ppfleetx.core.engine.inference_engine import SDP
 
+
 def _convert_param_attr_to_list(param_attr, n):
     """
     If `param_attr` is a list or tuple, convert every element in it to a
@@ -436,11 +437,12 @@ class MultiHeadAttention(Layer):
         print("SDP input q shape: ", q.shape)
         print("SDP input k shape: ", k.shape)
         # convert type to fp16
-        # q = paddle.cast(q, dtype="float16")
-        # k = paddle.cast(k, dtype="float16")
-        # v = paddle.cast(v, dtype="float16")
-        # attn_mask = paddle.cast(attn_mask, dtype="float16")
-        out = SDP(self.embed_dim, self.num_heads, self.dropout)(q, k, v, attn_mask)
+        # q = paddle.cast(q, dtype="float32")
+        # k = paddle.cast(k, dtype="float32")
+        # v = paddle.cast(v, dtype="float32")
+        # attn_mask = paddle.cast(attn_mask, dtype="float32")
+        out = SDP(self.embed_dim, self.num_heads, self.dropout)(q, k, v,
+                                                                attn_mask)
         # convert back to fp32
         # out = paddle.cast(out, dtype="float32")
         # combine heads
@@ -615,8 +617,10 @@ class TransformerEncoderLayer(Layer):
         residual = src
         if self.normalize_before:
             src = self.norm1(src)
-        print("attention input mask shape: ", src_mask.shape) #[batch_size, sequence_length, d_model]
-        print("attention input shape: ", src.shape) #[batch_size, sequence_length, d_model]
+        print("attention input mask shape: ",
+              src_mask.shape)  #[batch_size, sequence_length, d_model]
+        print("attention input shape: ",
+              src.shape)  #[batch_size, sequence_length, d_model]
         attn_outputs = self.self_attn(src, src, src, src_mask, cache)
         if isinstance(attn_outputs, tuple):
             src = attn_outputs[0]

@@ -28,20 +28,17 @@ import paddle.incubate.passes.ir as IR
 for lib in os.listdir(os.getenv("CUSTOM_DEVICE_ROOT")):
     if lib.endswith(".so"):
         paddle.utils.cpp_extension.extension_utils.load_op_meta_info_and_register_op(
-            lib
-        )
+            lib)
+
 
 class SDP(Layer):
-    def __init__(self,
-                 embed_dim,
-                 num_heads,
-                 attn_dropout=-1):
-        super(SDP, self).__init__()    
+    def __init__(self, embed_dim, num_heads, attn_dropout=-1):
+        super(SDP, self).__init__()
         self.embed_dim = embed_dim
         self.num_heads = num_heads
         self.head_dim = embed_dim // num_heads
         self.attn_dropout = attn_dropout
-        
+
     def forward(self, q, k, v, attn_mask=None):
         # compute scale dot prod
         product = paddle.matmul(x=q, y=k, transpose_y=True)
@@ -62,11 +59,9 @@ class SDP(Layer):
 
         out = paddle.matmul(weights, v)
         print('matmul (qk)=', weights.size(), ', v=', v.size())
-        return out       
-        
-        
- 
- 
+        return out
+
+
 @paddle.incubate.passes.ir.RegisterPass
 def generate_delete_dropout():
     def pattern(x):
@@ -79,6 +74,7 @@ def generate_delete_dropout():
         return paddle.scale(x)
 
     return pattern, replace
+
 
 # # @paddle.incubate.passes.ir.RegisterPass(input_specs={'x': InputSpec([-1, 384, 768]), 'attn_mask': InputSpec([-1, 12, 384, 384])})
 # @paddle.incubate.passes.ir.RegisterPass(input_specs={"q": InputSpec([8, 16, 384, 64]),
@@ -117,6 +113,7 @@ def generate_delete_dropout():
 
 #     return pattern, replace
 
+
 @paddle.incubate.passes.ir.RegisterPass
 def generate_fused_multihead_attention():
     def pattern(q, k, v, attn_mask):
@@ -140,14 +137,14 @@ def generate_fused_multihead_attention():
 
     def replace(q, k, v, attn_mask):
         fuse_op = paddle.incubate.passes.ir.PassDesc.OP.multihead_attention(
-            Q=q, K=k, V=v, Attn_mask=attn_mask
-        )
+            Q=q, K=k, V=v, Attn_mask=attn_mask)
         return fuse_op
 
     return pattern, replace
 
-# TensorRT precisions
-TRT_PRECISIONS = {
+
+# precisions config
+PRECISIONS = {
     'fp32': paddle.inference.PrecisionType.Float32,
     'fp16': paddle.inference.PrecisionType.Half,
     'int8': paddle.inference.PrecisionType.Int8,
@@ -159,7 +156,7 @@ class _StaticGuard(object):
         pass
 
     def __enter__(self):
-        pass 
+        pass
         # paddle.enable_static()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -245,14 +242,15 @@ class InferenceEngine(object):
                  mp_degree=1,
                  tensorrt_config=None,
                  device=None,
-                 custom_passes=None):
+                 custom_passes=None,
+                 precision='fp32'):
         self.model_dir = model_dir
         self.mp_degree = mp_degree
         self.tensorrt_config = tensorrt_config
         self.auto = False
         self.device = device
         self.custom_passes = custom_passes
-       
+        self.precision = precision
 
         for fname in os.listdir(model_dir):
             if "auto" in fname:
@@ -329,10 +327,11 @@ class InferenceEngine(object):
         if self.device:
             device_id = int(
                 os.environ.get(f'FLAGS_selected_{self.device}s', 0))
-            config.enable_custom_device(self.device, device_id)
+            config.enable_custom_device(self.device, device_id,
+                                        PRECISIONS[self.precision])
         elif paddle.fluid.core.is_compiled_with_cuda():
             device_id = int(os.environ.get('FLAGS_selected_gpus', 0))
-            config.enable_use_gpu(100, device_id)
+            config.enable_use_gpu(100, device_id, PRECISIONS[self.precision])
         elif paddle.fluid.core.is_compiled_with_xpu():
             device_id = int(os.environ.get('FLAGS_selected_xpus', 0))
             config.enable_xpu()
@@ -372,10 +371,11 @@ class InferenceEngine(object):
             else:
                 config.enable_tuned_tensorrt_dynamic_shape(
                     self.tensorrt_config.shape_range_info_filename, True)
-        
+
         # Append custom pases into pass_builder
         if self.custom_passes and isinstance(self.custom_passes, list):
             pass_builder = config.pass_builder()
+            print(pass_builder.all_passes())
             for custom_pass in self.custom_passes:
                 pass_builder.append_pass(custom_pass)
             print(pass_builder.all_passes())

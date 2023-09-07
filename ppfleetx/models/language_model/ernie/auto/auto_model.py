@@ -314,8 +314,7 @@ class ErnieModelAuto(nn.Layer):
         for lib in os.listdir(os.getenv("CUSTOM_DEVICE_ROOT")):
             if lib.endswith(".so"):
                 paddle.utils.cpp_extension.extension_utils.load_op_meta_info_and_register_op(
-                    lib
-                )
+                    lib)
 
     def get_input_embeddings(self):
         return self.embeddings.word_embeddings
@@ -421,10 +420,10 @@ class ErnieModelAuto(nn.Layer):
                 (input_ids == self.pad_token_id
                  ).astype(self.pooler.dense.weight.dtype) * -1e4,
                 axis=[1, 2])
-            print("attn_mask", attention_mask)
-            attention_mask = paddle.rand((input_shape[0], self.num_attention_heads, input_shape[1], input_shape[1]))
-            print("attn_mask", attention_mask)
-            attention_mask = paddle.ones((8, 16, 384, 384))
+            #print("attn_mask", attention_mask)
+            #attention_mask = paddle.rand((input_shape[0], self.num_attention_heads, input_shape[1], input_shape[1]))
+            #print("attn_mask", attention_mask)
+            #attention_mask = paddle.ones((8, 16, 384, 384))
             print("attn_mask", attention_mask)
             if past_key_values is not None:
                 batch_size = past_key_values[0][0].shape[0]

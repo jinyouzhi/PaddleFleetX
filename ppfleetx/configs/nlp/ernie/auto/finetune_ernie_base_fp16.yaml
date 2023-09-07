@@ -23,7 +23,7 @@ Engine:
     level: "o1"
     scale_loss: 32768.0
     custom_black_list: ["reduce_sum", "c_softmax_with_cross_entropy", "elementwise_div"]
-    custom_white_list: ["lookup_table", "lookup_table_v2", "multi_head_attention"]
+    custom_white_list: ["lookup_table", "lookup_table_v2", "multihead_attention"]
   save_load:
     save_steps: 50000
     save_epoch: 1
@@ -86,4 +86,3 @@ Optimizer:
   grad_clip:
     name: "ClipGradByGlobalNorm"
     clip_norm: 1.0
-
