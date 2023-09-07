@@ -1,3 +1,4 @@
+export DT=fp16
 # 1N1C
 sh projects/ernie/auto_export_ernie_345M_mp1_intel_gpu.sh
 BS=1 sh projects/ernie/run_inference_intel_gpu.sh |& tee ./fp32/inf345m_1n1c_bs1.log

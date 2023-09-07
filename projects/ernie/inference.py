@@ -48,6 +48,12 @@ def parse_args():
         type=int,
         help="batch size")
     parser.add_argument(
+        '-p',
+        '--precision',
+        default=os.environ.get("DT", 'fp32'),
+        type=str,
+        help="precision fp32 or fp16(amp)")
+    parser.add_argument(
         '--dummy',
         default=True,
         action='store_true',
@@ -75,7 +81,7 @@ def main(args):
             max_batch_size=32,
             workspace_size=1 << 30,
             min_subgraph_size=3,
-            precision='fp16',
+            precision=args.precision,
             use_static=False,
             use_calib_mode=False,
             collect_shape=True,
@@ -92,7 +98,7 @@ def main(args):
             "generate_fused_multihead_attention",
             # "auto_mixed_precision_pass",
         ],
-        precision='fp16')
+        precision='fp32')
     tokenizer = GPTTokenizer.from_pretrained("gpt2")
     text = 'Hi ERNIE. Tell me who Jack Ma is.'
     inputs = tokenizer(text, padding=True, return_attention_mask=True)
