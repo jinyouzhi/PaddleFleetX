@@ -33,7 +33,7 @@ from ..layers.model_outputs import BaseModelOutputWithPastAndCrossAttentions
 __all__ = []
 
 # from .custom_passes import SDP
-from ppfleetx.core.engine.inference_engine import SDP
+# from ppfleetx.core.engine.inference_engine import SDP
 
 
 def _convert_param_attr_to_list(param_attr, n):
@@ -419,30 +419,30 @@ class MultiHeadAttention(Layer):
             q, k, v, cache = self._prepare_qkv(query, key, value, cache)
 
         # scale dot product attention
-        # product = paddle.matmul(
-        #     x=q * (self.head_dim**-0.5), y=k, transpose_y=True)
-        # if attn_mask is not None:
-        #     # Support bool or int mask
-        #     attn_mask = _convert_attention_mask(attn_mask, product.dtype)
-        #     product = product + attn_mask
-        # weights = F.softmax(product)
-        # if self.dropout:
-        #     weights = F.dropout(
-        #         weights,
-        #         self.dropout,
-        #         training=self.training,
-        #         mode="upscale_in_train")
+        product = paddle.matmul(
+            x=q * (self.head_dim**-0.5), y=k, transpose_y=True)
+        if attn_mask is not None:
+            # Support bool or int mask
+            attn_mask = _convert_attention_mask(attn_mask, product.dtype)
+            product = product + attn_mask
+        weights = F.softmax(product)
+        if self.dropout:
+            weights = F.dropout(
+                weights,
+                self.dropout,
+                training=self.training,
+                mode="upscale_in_train")
 
-        # out = paddle.matmul(weights, v)
-        print("SDP input q shape: ", q.shape)
-        print("SDP input k shape: ", k.shape)
+        out = paddle.matmul(weights, v)
+        # print("SDP input q shape: ", q.shape)
+        # print("SDP input k shape: ", k.shape)
         # convert type to fp16
         # q = paddle.cast(q, dtype="float32")
         # k = paddle.cast(k, dtype="float32")
         # v = paddle.cast(v, dtype="float32")
         # attn_mask = paddle.cast(attn_mask, dtype="float32")
-        out = SDP(self.embed_dim, self.num_heads, self.dropout)(q, k, v,
-                                                                attn_mask)
+        # out = SDP(self.embed_dim, self.num_heads, self.dropout)(q, k, v,
+        #                                                         attn_mask)
         # convert back to fp32
         # out = paddle.cast(out, dtype="float32")
         # combine heads

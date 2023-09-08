@@ -140,7 +140,6 @@ class AutoEngine(BasicEngine):
             collate_fn=test_dataset.collate_fn)
 
     def export(self):
-        # paddle.disable_static()
         self._auto_engine.prepare(self._module.input_spec(), mode="predict")
         self.save(training=False)
 

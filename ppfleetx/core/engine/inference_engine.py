@@ -30,36 +30,35 @@ for lib in os.listdir(os.getenv("CUSTOM_DEVICE_ROOT")):
         paddle.utils.cpp_extension.extension_utils.load_op_meta_info_and_register_op(
             lib)
 
+# class SDP(Layer):
+#     def __init__(self, embed_dim, num_heads, attn_dropout=-1):
+#         super(SDP, self).__init__()
+#         self.embed_dim = embed_dim
+#         self.num_heads = num_heads
+#         self.head_dim = embed_dim // num_heads
+#         self.attn_dropout = attn_dropout
 
-class SDP(Layer):
-    def __init__(self, embed_dim, num_heads, attn_dropout=-1):
-        super(SDP, self).__init__()
-        self.embed_dim = embed_dim
-        self.num_heads = num_heads
-        self.head_dim = embed_dim // num_heads
-        self.attn_dropout = attn_dropout
+#     def forward(self, q, k, v, attn_mask=None):
+#         # compute scale dot prod
+#         product = paddle.matmul(x=q, y=k, transpose_y=True)
+#         print('matmul q=', q.size(), ', k=', k.size())
+#         product = paddle.scale(product, scale=self.head_dim**-1.5)
+#         if attn_mask is not None:
+#             print('qk mask')
+#             product = product + attn_mask
 
-    def forward(self, q, k, v, attn_mask=None):
-        # compute scale dot prod
-        product = paddle.matmul(x=q, y=k, transpose_y=True)
-        print('matmul q=', q.size(), ', k=', k.size())
-        product = paddle.scale(product, scale=self.head_dim**-1.5)
-        if attn_mask is not None:
-            print('qk mask')
-            product = product + attn_mask
+#         weights = F.softmax(product)
+#         print('qk softmax')
+#         # out = weights
+#         # if enable dropout can't work
+#         if self.attn_dropout:
+#             print('qk dropout')
+#             weights = paddle.scale(weights, 0.9)
+#             # weights = F.dropout(weights, 0.1, training=False, mode="downscale_in_infer")
 
-        weights = F.softmax(product)
-        print('qk softmax')
-        # out = weights
-        # if enable dropout can't work
-        if self.attn_dropout:
-            print('qk dropout')
-            weights = paddle.scale(weights, 0.9)
-            # weights = F.dropout(weights, 0.1, training=False, mode="downscale_in_infer")
-
-        out = paddle.matmul(weights, v)
-        print('matmul (qk)=', weights.size(), ', v=', v.size())
-        return out
+#         out = paddle.matmul(weights, v)
+#         print('matmul (qk)=', weights.size(), ', v=', v.size())
+#         return out
 
 
 @paddle.incubate.passes.ir.RegisterPass
@@ -122,8 +121,8 @@ def generate_fused_multihead_attention():
         You can check ops name in Netron(Graph View Tool)
         make sure all op's name in following code keep same to graph view
         """
-        product = IR.PassDesc.OP.matmul_v2(X=q, Y=k)
-        product = IR.PassDesc.OP.scale(X=product)
+        q_scale = IR.PassDesc.OP.scale(X=q)
+        product = IR.PassDesc.OP.matmul_v2(X=q_scale, Y=k)
         #if attn_mask is not None:
         product = IR.PassDesc.OP.elementwise_add(X=product, Y=attn_mask)
         weights = IR.PassDesc.OP.softmax(X=product)
