@@ -156,12 +156,10 @@ class _StaticGuard(object):
         pass
 
     def __enter__(self):
-        pass
-        # paddle.enable_static()
+        paddle.enable_static()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
-        # paddle.disable_static()
+        paddle.disable_static()
 
 
 class TensorRTConfig(object):

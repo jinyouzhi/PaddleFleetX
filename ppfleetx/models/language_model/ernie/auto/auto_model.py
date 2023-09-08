@@ -310,11 +310,6 @@ class ErnieModelAuto(nn.Layer):
 
         self.pooler = ErniePooler(hidden_size, weight_attr)
         self.apply(self.init_weights)
-        # new add
-        for lib in os.listdir(os.getenv("CUSTOM_DEVICE_ROOT")):
-            if lib.endswith(".so"):
-                paddle.utils.cpp_extension.extension_utils.load_op_meta_info_and_register_op(
-                    lib)
 
     def get_input_embeddings(self):
         return self.embeddings.word_embeddings
@@ -415,16 +410,10 @@ class ErnieModelAuto(nn.Layer):
             past_key_values_length = past_key_values[0][0].shape[2]
 
         if attention_mask is None:
-            # import pdb;pdb.set_trace()
             attention_mask = paddle.unsqueeze(
                 (input_ids == self.pad_token_id
                  ).astype(self.pooler.dense.weight.dtype) * -1e4,
                 axis=[1, 2])
-            #print("attn_mask", attention_mask)
-            #attention_mask = paddle.rand((input_shape[0], self.num_attention_heads, input_shape[1], input_shape[1]))
-            #print("attn_mask", attention_mask)
-            #attention_mask = paddle.ones((8, 16, 384, 384))
-            print("attn_mask", attention_mask)
             if past_key_values is not None:
                 batch_size = past_key_values[0][0].shape[0]
                 past_mask = paddle.zeros(
@@ -447,7 +436,6 @@ class ErnieModelAuto(nn.Layer):
             task_type_ids=task_type_ids,
             inputs_embeds=inputs_embeds,
             past_key_values_length=past_key_values_length)
-        print("embedding output shape: ", embedding_output.shape)
         self.encoder._use_cache = use_cache  # To be consistent with HF
         encoder_outputs = self.encoder(
             embedding_output,
