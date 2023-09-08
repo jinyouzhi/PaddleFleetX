@@ -60,7 +60,7 @@ def parse_args():
         help='use dummy data for benchmark')
     parser.add_argument(
         '--seed',
-        default=1233457890,
+        default=os.getpid(),
         type=int,
         help='random seed for dummy data')
     parser.add_argument(
@@ -98,7 +98,7 @@ def main(args):
             "generate_fused_multihead_attention",
             # "auto_mixed_precision_pass",
         ],
-        precision='fp32')
+        precision=args.precision)
     tokenizer = GPTTokenizer.from_pretrained("gpt2")
     text = 'Hi ERNIE. Tell me who Jack Ma is.'
     inputs = tokenizer(text, padding=True, return_attention_mask=True)

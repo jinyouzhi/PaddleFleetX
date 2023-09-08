@@ -1,4 +1,4 @@
-export DT=fp32
+export DT=fp16
 # 1N1C
 # sh projects/ernie/auto_export_ernie_345M_mp1fp16_intel_gpu.sh
 sh projects/ernie/auto_export_ernie_345M_mp1_intel_gpu.sh
@@ -40,15 +40,29 @@ BS=256 sh projects/ernie/run_inference_mp2_intel_gpu.sh |& tee ./fp16/inf345m_1n
 BS=512 sh projects/ernie/run_inference_mp2_intel_gpu.sh |& tee ./fp16/inf345m_1n2c_bs512.log
 # # 1N4C
 # sh projects/ernie/auto_export_ernie_345M_mp4fp16_intel_gpu.sh
-# sh projects/ernie/auto_export_ernie_345M_mp4_intel_gpu.sh
-# BS=1 sh projects/ernie/run_inference_mp4_intel_gpu.sh |& tee ./fp16/inf345m_1n4c_bs1.log
-# BS=2 sh projects/ernie/run_inference_mp4_intel_gpu.sh |& tee ./fp16/inf345m_1n4c_bs2.log
-# BS=4 sh projects/ernie/run_inference_mp4_intel_gpu.sh |& tee ./fp16/inf345m_1n4c_bs4.log
-# BS=8 sh projects/ernie/run_inference_mp4_intel_gpu.sh |& tee ./fp16/inf345m_1n4c_bs8.log
-# BS=16 sh projects/ernie/run_inference_mp4_intel_gpu.sh |& tee ./fp16/inf345m_1n4c_bs16.log
-# BS=32 sh projects/ernie/run_inference_mp4_intel_gpu.sh |& tee ./fp16/inf345m_1n4c_bs32.log
-# BS=64 sh projects/ernie/run_inference_mp4_intel_gpu.sh |& tee ./fp16/inf345m_1n4c_bs64.log
-# BS=128 sh projects/ernie/run_inference_mp4_intel_gpu.sh |& tee ./fp16/inf345m_1n4c_bs128.log
-# BS=256 sh projects/ernie/run_inference_mp4_intel_gpu.sh |& tee ./fp16/inf345m_1n4c_bs256.log
-# BS=512 sh projects/ernie/run_inference_mp4_intel_gpu.sh |& tee ./fp16/inf345m_1n4c_bs512.log
-# BS=1024 sh projects/ernie/run_inference_mp4_intel_gpu.sh |& tee ./fp16/inf345m_1n4c_bs1024.log
+sh projects/ernie/auto_export_ernie_345M_mp4_intel_gpu.sh
+BS=1 sh projects/ernie/run_inference_mp4_intel_gpu.sh |& tee ./fp16/inf345m_1n4c_bs1.log
+BS=2 sh projects/ernie/run_inference_mp4_intel_gpu.sh |& tee ./fp16/inf345m_1n4c_bs2.log
+BS=4 sh projects/ernie/run_inference_mp4_intel_gpu.sh |& tee ./fp16/inf345m_1n4c_bs4.log
+BS=8 sh projects/ernie/run_inference_mp4_intel_gpu.sh |& tee ./fp16/inf345m_1n4c_bs8.log
+BS=16 sh projects/ernie/run_inference_mp4_intel_gpu.sh |& tee ./fp16/inf345m_1n4c_bs16.log
+BS=32 sh projects/ernie/run_inference_mp4_intel_gpu.sh |& tee ./fp16/inf345m_1n4c_bs32.log
+BS=64 sh projects/ernie/run_inference_mp4_intel_gpu.sh |& tee ./fp16/inf345m_1n4c_bs64.log
+BS=128 sh projects/ernie/run_inference_mp4_intel_gpu.sh |& tee ./fp16/inf345m_1n4c_bs128.log
+BS=256 sh projects/ernie/run_inference_mp4_intel_gpu.sh |& tee ./fp16/inf345m_1n4c_bs256.log
+BS=512 sh projects/ernie/run_inference_mp4_intel_gpu.sh |& tee ./fp16/inf345m_1n4c_bs512.log
+BS=1024 sh projects/ernie/run_inference_mp4_intel_gpu.sh |& tee ./fp16/inf345m_1n4c_bs1024.log
+# # 1N8C
+# sh projects/ernie/auto_export_ernie_345M_mp8fp16_intel_gpu.sh
+sh projects/ernie/auto_export_ernie_345M_mp8_intel_gpu.sh
+BS=1 sh projects/ernie/run_inference_mp8_intel_gpu.sh |& tee ./fp16/inf345m_1n8c_bs1.log
+BS=2 sh projects/ernie/run_inference_mp8_intel_gpu.sh |& tee ./fp16/inf345m_1n8c_bs2.log
+BS=4 sh projects/ernie/run_inference_mp8_intel_gpu.sh |& tee ./fp16/inf345m_1n8c_bs4.log
+BS=8 sh projects/ernie/run_inference_mp8_intel_gpu.sh |& tee ./fp16/inf345m_1n8c_bs8.log
+BS=16 sh projects/ernie/run_inference_mp8_intel_gpu.sh |& tee ./fp16/inf345m_1n8c_bs16.log
+BS=32 sh projects/ernie/run_inference_mp8_intel_gpu.sh |& tee ./fp16/inf345m_1n8c_bs32.log
+BS=64 sh projects/ernie/run_inference_mp8_intel_gpu.sh |& tee ./fp16/inf345m_1n8c_bs64.log
+BS=128 sh projects/ernie/run_inference_mp8_intel_gpu.sh |& tee ./fp16/inf345m_1n8c_bs128.log
+BS=256 sh projects/ernie/run_inference_mp8_intel_gpu.sh |& tee ./fp16/inf345m_1n8c_bs256.log
+BS=512 sh projects/ernie/run_inference_mp8_intel_gpu.sh |& tee ./fp16/inf345m_1n8c_bs512.log
+BS=1024 sh projects/ernie/run_inference_mp8_intel_gpu.sh |& tee ./fp16/inf345m_1n8c_bs1024.log

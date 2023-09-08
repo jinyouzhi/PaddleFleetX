@@ -1,9 +1,9 @@
 
 # load oneapi
-_P="/opt/intel/oneapi/compiler/latest/env/vars.sh"
+_P="${HOME}/intel/oneapi/compiler/latest/env/vars.sh"
 echo -e "source ${_P}"
 source ${_P}
-_P="/opt/intel/oneapi/mkl/latest/env/vars.sh"
+_P="${HOME}/intel/oneapi/mkl/latest/env/vars.sh"
 echo -e "source ${_P}"
 source ${_P}
 unset _P
@@ -14,7 +14,7 @@ source $(python -c 'import site, os; print(os.path.join(site.getsitepackages()[0
 
 export PADDLE_XCCL_BACKEND="intel_gpu"
 export PADDLE_DISTRI_BACKEND="xccl"
-export FLAGS_selected_intel_gpus="0,1"
+export FLAGS_selected_intel_gpus="0,1,2,3,4,5,6,7"
 
 export CCL_ZE_IPC_EXCHANGE=sockets
 # ENV for ATS-M, double type
